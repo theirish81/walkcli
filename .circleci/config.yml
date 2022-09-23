@@ -1,0 +1,68 @@
+version: 2.1
+jobs:
+  test:
+    docker:
+      - image: golang:latest
+    steps:
+      - checkout
+      - run:
+          name: "dependencies"
+          command: "go get"
+      - run:
+          name: "Run tests"
+          command: "go test"
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .
+  build:
+    docker:
+      - image: golang:latest
+    steps:
+      - attach_workspace:
+          at: .
+      - run:
+          name: "build"
+          command: |
+            mkdir artifacts && \
+            env GOOS=darwin GOARCH=amd64 go build -o artifacts/walkcli-darwin-amd64 && \
+            env GOOS=darwin GOARCH=arm64 go build -o artifacts/walkcli-darwin-arm64 && \
+            env GOOS=linux GOARCH=amd64 go build -o artifacts/walkcli-linux-amd64
+      - persist_to_workspace:
+          root: .
+          paths:
+            - artifacts
+  release:
+    docker:
+      - image: cibuilds/github:0.10
+    steps:
+      - attach_workspace:
+          at: .
+      - run:
+          command: |
+            VERSION=${CIRCLE_TAG}
+            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${VERSION} ./artifacts/
+workflows:
+  build-workflow:
+    jobs:
+      - test:
+          filters:
+            tags:
+              only: /.*/
+      - build:
+          requires:
+            - test
+          filters:
+            tags:
+              only: /.*/
+            branches:
+              ignore: /.*/
+
+      - release:
+          requires:
+            - build
+          filters:
+            tags:
+              only: /.*/
+            branches:
+              ignore: /.*/
