@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/TylerBrock/colorjson v0.0.0-20200706003622-8a50f05110d2
 	github.com/pborman/getopt/v2 v2.1.0
-	github.com/theirish81/gowalker v0.4.6
+	github.com/theirish81/gowalker v0.4.7
 	gopkg.in/yaml.v3 v3.0.1
 )
 
